@@ -9,9 +9,11 @@ Dead simple gui with support for latest [Diffusers (v0.8.0)](https://github.com/
 
 Supported schedulers: DDIM, LMS, PNDM, Euler.
 
+Built with Gradio.
+
 ![image](./screenshots/app.png)
 
-Built with Gradio.
+![image](./screenshots/inpainting.png)
 
 ## First installation
 
