@@ -47,7 +47,6 @@ def run_diffusers(
     eta: float,
     denoise_strength: float,
     seed: str,
-    image_format: str,
     mask_image: PIL.Image.Image
 ) -> Tuple[list, str]:
     global model_name
@@ -143,13 +142,13 @@ def run_diffusers(
 
 def clear_click():
     return {
-        prompt: "", neg_prompt: "", image: None, mask: None, sch: "Euler", iter: 1, batch: 1,
-        steps: 25, guid: 11, height: 512, width: 512, eta: 0.0, denoise: 0.8, seed: "", fmt: "png"}
+        prompt: "", neg_prompt: "", image: None, mask: None, mask_mode: "Draw mask", sch: "Euler", iter: 1, batch: 1,
+        drawn_mask: None, steps: 25, guid: 11, height: 512, width: 512, eta: 0.0, denoise: 0.8, seed: ""}
 
 
 def generate_click(
     model_drop, prompt, neg_prompt, sch, iter, batch, steps, guid, height, width, eta,
-    seed, fmt, image, denoise, mask, pipeline
+    seed, image, denoise, mask, pipeline, mask_mode, drawn_mask
 ):
     global model_name
     global provider
@@ -187,7 +186,7 @@ def generate_click(
 
         return run_diffusers(
             prompt, neg_prompt, None, iter, batch, steps, guid, height, width, eta, 0,
-            seed, fmt, None)
+            seed, None)
     elif pipeline == "IMG2IMG":
         if current_pipe != "img2img" or pipe is None:
             pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
@@ -217,7 +216,7 @@ def generate_click(
 
         return run_diffusers(
             prompt, neg_prompt, input_image, iter, batch, steps, guid, height, width, eta,
-            denoise, seed, fmt, None)
+            denoise, seed, None)
     elif pipeline == "Inpainting" and is_v_0_7:
         if current_pipe != "inpaint" or pipe is None:
             # >=0.8.0: Model name must ends with "inpainting" to use the proper pipeline
@@ -237,8 +236,29 @@ def generate_click(
         if type(pipe.scheduler) is not type(scheduler):
             pipe.scheduler = scheduler
 
+        if mask_mode == "Upload mask":
+            input_image = image.convert("RGB")
+
+            # input mask resizing
+            input_mask = mask.convert("RGB")
+            input_mask_width, input_mask_height = input_mask.size
+            if height / width > input_mask_height / input_mask_width:
+                adjust_mask_width = int(input_mask_width * height / input_mask_height)
+                input_mask = input_mask.resize((adjust_mask_width, height))
+                mask_left = (adjust_mask_width - width) // 2
+                mask_right = mask_left + width
+                input_mask = input_mask.crop((mask_left, 0, mask_right, height))
+            else:
+                adjust_height = int(input_mask_height * width / input_mask_width)
+                input_mask = input_mask.resize((width, adjust_height))
+                top = (adjust_height - height) // 2
+                bottom = top + height
+                input_mask = input_mask.crop((0, top, width, bottom))
+        else:
+            input_image = drawn_mask['image'].convert('RGB')
+            input_mask = drawn_mask['mask']
+
         # input image resizing
-        input_image = image.convert("RGB")
         input_width, input_height = input_image.size
         if height / width > input_height / input_width:
             adjust_width = int(input_width * height / input_height)
@@ -253,25 +273,10 @@ def generate_click(
             bottom = top + height
             input_image = input_image.crop((0, top, width, bottom))
 
-        # input mask resizing
-        input_mask = mask.convert("RGB")
-        input_width, input_height = input_mask.size
-        if height / width > input_height / input_width:
-            adjust_width = int(input_width * height / input_height)
-            input_mask = input_mask.resize((adjust_width, height))
-            left = (adjust_width - width) // 2
-            right = left + width
-            input_mask = input_mask.crop((left, 0, right, height))
-        else:
-            adjust_height = int(input_height * width / input_width)
-            input_mask = input_mask.resize((width, adjust_height))
-            top = (adjust_height - height) // 2
-            bottom = top + height
-            input_mask = input_mask.crop((0, top, width, bottom))
 
         return run_diffusers(
             prompt, neg_prompt, input_image, iter, batch, steps, guid, height, width, eta,
-            denoise, seed, fmt, input_mask)
+            denoise, seed, input_mask)
 
 
 def choose_sch(sched_name: str):
@@ -280,13 +285,22 @@ def choose_sch(sched_name: str):
     else:
         return gr.update(visible=False)
 
-def choose_pipeline(pipeline: str):
+def choose_pipeline(pipeline: str, mask_mode: str):
     if(pipeline == "TEXT2IMG"):
-        return (gr.update(visible=False), gr.update(visible=False), gr.update(visible=False))
+        return (gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False))
     if(pipeline == "IMG2IMG"):
-        return (gr.update(visible=True), gr.update(visible=False), gr.update(visible=True))
+        return (gr.update(visible=True), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False), gr.update(visible=False))
     if(pipeline == "Inpainting"):
-        return (gr.update(visible=True), gr.update(visible=True), gr.update(visible=True))
+        if mask_mode == "Draw mask":
+            return (gr.update(visible=False), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True))
+        else:
+            return (gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False))
+
+def choose_mask_mode(mask_mode):
+    if mask_mode == "Draw mask":
+        return [gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)]
+    else:
+        return [gr.update(visible=True), gr.update(visible=True), gr.update(visible=False)]
 
 def size_512_lock(size):
     if size != 512:
@@ -336,11 +350,13 @@ if __name__ == "__main__":
                     eta = gr.Slider(0, 1, value=0.0, step=0.01, label="DDIM eta", visible=False)
                     seed = gr.Textbox(value="", max_lines=1, label="Seed")
                 with gr.Column():
+                    mask_mode = gr.Radio(label="Mask mode", show_label=False, choices=["Draw mask", "Upload mask"], value="Draw mask", visible=False)
                     image = gr.Image(label="Input image", type="pil", visible=False)
                     mask = gr.Image(label="Input mask", type="pil", visible=False)
+                    drawn_mask = gr.Image(label="Input image and mask", source="upload", tool="sketch", type="pil", visible=False)
                     prompt = gr.Textbox(value="", lines=2, label="Prompt")
                     neg_prompt = gr.Textbox(value="", lines=2, label="Negative prompt", visible=is_v_0_4)
-                    steps = gr.Slider(1, 100, value=25, step=1, label="Steps")
+                    steps = gr.Slider(1, 150, value=25, step=1, label="Steps")
                     guid = gr.Slider(0, 20, value=11, step=0.5, label="Guidance")
                 with gr.Column():
                     height = gr.Slider(16, 1920, value=512, step=8, label="Height")
@@ -349,7 +365,6 @@ if __name__ == "__main__":
                 with gr.Column():
                     iter = gr.Slider(1, 24, value=1, step=1, label="Iteration count")
                     batch = gr.Slider(1, 4, value=1, step=1, label="Batch size")
-                    fmt = gr.Radio(["png", "jpg"], value="png", label="File format")
             with gr.Column(scale=1, min_width=600):
                 with gr.Row():
                     gen_btn = gr.Button("Generate", variant="primary")
@@ -361,13 +376,14 @@ if __name__ == "__main__":
         # config components
         all_inputs = [
             model_drop, prompt, neg_prompt, sch, iter, batch, steps, guid, height, width,
-            eta, seed, fmt, image, denoise, mask, pipeline]
+            eta, seed, image, denoise, mask, pipeline, mask_mode, drawn_mask]
         clear_btn.click(fn=clear_click, inputs=None, outputs=all_inputs, queue=False)
         gen_btn.click(fn=generate_click, inputs=all_inputs, outputs=[image_out, status_out])
 
         height.change(fn=size_512_lock, inputs=height, outputs=width)
         width.change(fn=size_512_lock, inputs=width, outputs=height)
-        pipeline.change(fn=choose_pipeline, inputs=pipeline, outputs=[image, mask, denoise])
+        mask_mode.change(fn=choose_mask_mode, inputs=mask_mode, outputs=[image, mask, drawn_mask])
+        pipeline.change(fn=choose_pipeline, inputs=[pipeline, mask_mode], outputs=[image, mask, denoise, mask_mode, drawn_mask])
         sch.change(fn=choose_sch, inputs=sch, outputs=eta)
 
         image_out.style(grid=2)
