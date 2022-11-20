@@ -1,0 +1,7 @@
+__pycache__
+deprecated
+model
+output
+venv
+v1-*inference.yaml
+convert*
