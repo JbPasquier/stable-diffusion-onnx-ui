@@ -5,7 +5,7 @@
 * [Run](#run)
 * [Updating](#updating)
 
-Dead simple gui with support for latest [Diffusers (v0.8.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 1.5](https://huggingface.co/runwayml/stable-diffusion-v1-5) or any other model, even inpainting finetuned ones.
+Dead simple gui with support for latest [Diffusers (v0.8.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2](https://huggingface.co/stabilityai/stable-diffusion-2) or any other model, even inpainting finetuned ones.
 
 Supported schedulers: DDIM, LMS, PNDM, Euler.
 
@@ -48,13 +48,13 @@ mkdir model
 ### Stable Diffusion
 
 ```ps1
-git clone https://huggingface.co/runwayml/stable-diffusion-v1-5 --branch onnx --single-branch ./model/stable_diffusion_onnx
+python convert_stable_diffusion_checkpoint_to_onnx.py --model_path="stabilityai/stable-diffusion-2" --output_path="model/stable_diffusion_onnx"
 ```
 
 ### Stable Diffusion Inpainting
 
 ```ps1
-git clone https://huggingface.co/runwayml/stable-diffusion-inpainting  --branch onnx --single-branch ./model/stable_diffusion_onnx_inpainting
+python convert_stable_diffusion_checkpoint_to_onnx.py --model_path="stabilityai/stable-diffusion-2-inpainting" --output_path="model/stable_diffusion_inpainting_onnx"
 ```
 
 ### Other from Hugging Face
@@ -91,7 +91,7 @@ python app.py --share
 python app.py --cpu-only
 ```
 
-Notice that inpainting provide way better results with a proper model like [stable-diffusion-inpainting](https://huggingface.co/runwayml/stable-diffusion-inpainting)
+Notice that inpainting provide way better results with a proper model like [stable-diffusion-inpainting](https://huggingface.co/stabilityai/stable-diffusion-2-inpainting)
 
 ## Updating
 
