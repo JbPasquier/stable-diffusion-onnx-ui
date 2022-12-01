@@ -5,7 +5,7 @@
 * [Run](#run)
 * [Updating](#updating)
 
-Dead simple gui with support for latest [Diffusers (v0.8.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 1.5](https://huggingface.co/runwayml/stable-diffusion-v1-5) or any other model, even inpainting finetuned ones.
+Dead simple gui with support for latest [Diffusers (v0.10.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2](https://huggingface.co/stabilityai/stable-diffusion-2) or any other model, even inpainting finetuned ones.
 
 Supported schedulers: DDIM, LMS, PNDM, Euler.
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Tuple
 
 from diffusers import OnnxStableDiffusionPipeline, OnnxStableDiffusionImg2ImgPipeline
+from diffusers import OnnxStableDiffusionInpaintPipeline, OnnxStableDiffusionInpaintPipelineLegacy
 from diffusers import DDIMScheduler, LMSDiscreteScheduler, PNDMScheduler, EulerDiscreteScheduler
 from diffusers import __version__ as _df_version
 import gradio as gr
@@ -15,16 +16,6 @@ import numpy as np
 from packaging import version
 import PIL
 
-is_v_0_4 = version.parse(_df_version) >= version.parse("0.4.0") # Negative prompt
-is_v_0_6 = version.parse(_df_version) >= version.parse("0.6.0") # Img2Img
-is_v_0_7 = version.parse(_df_version) >= version.parse("0.7.0") # Inpainting
-is_v_0_8 = version.parse(_df_version) >= version.parse("0.8.0") # Inpainting without finetuned model
-
-if is_v_0_7:
-    from diffusers import OnnxStableDiffusionInpaintPipeline
-
-if is_v_0_8:
-    from diffusers import OnnxStableDiffusionInpaintPipelineLegacy
 
 
 def get_latents_from_seed(seed: int, batch_size: int, height: int, width: int) -> np.ndarray:
@@ -164,20 +155,19 @@ def generate_click(
     model_path = os.path.join("model", model_name)
 
     if sch == "PNDM" and type(scheduler) is not PNDMScheduler:
-        scheduler = PNDMScheduler.from_config(model_path, subfolder="scheduler")
+        scheduler = PNDMScheduler.from_pretrained(model_path, subfolder="scheduler")
     elif sch == "LMS" and type(scheduler) is not LMSDiscreteScheduler:
-        scheduler = LMSDiscreteScheduler.from_config(model_path, subfolder="scheduler")
+        scheduler = LMSDiscreteScheduler.from_pretrained(model_path, subfolder="scheduler")
     elif sch == "DDIM" and type(scheduler) is not DDIMScheduler:
-        scheduler = DDIMScheduler.from_config(model_path, subfolder="scheduler")
+        scheduler = DDIMScheduler.from_pretrained(model_path, subfolder="scheduler")
     elif sch == "Euler" and type(scheduler) is not EulerDiscreteScheduler:
-        scheduler = EulerDiscreteScheduler.from_config(model_path, subfolder="scheduler")
+        scheduler = EulerDiscreteScheduler.from_pretrained(model_path, subfolder="scheduler")
 
     # select which pipeline depending on current tab
     if pipeline == "TEXT2IMG":
         if current_pipe != "txt2img" or pipe is None:
             pipe = OnnxStableDiffusionPipeline.from_pretrained(
                 model_path, provider=provider, scheduler=scheduler)
-            pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images))
             gc.collect()
         current_pipe = "txt2img"
 
@@ -191,7 +181,6 @@ def generate_click(
         if current_pipe != "img2img" or pipe is None:
             pipe = OnnxStableDiffusionImg2ImgPipeline.from_pretrained(
                 model_path, provider=provider, scheduler=scheduler)
-            pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images))
             gc.collect()
         current_pipe = "img2img"
 
@@ -217,19 +206,18 @@ def generate_click(
         return run_diffusers(
             prompt, neg_prompt, input_image, iter, batch, steps, guid, height, width, eta,
             denoise, seed, None)
-    elif pipeline == "Inpainting" and is_v_0_7:
+    elif pipeline == "Inpainting":
         if current_pipe != "inpaint" or pipe is None:
             # >=0.8.0: Model name must ends with "inpainting" to use the proper pipeline
             # This allows usage of Legacy pipeline for models not finetuned for inpainting
             # see huggingface/diffusers!51
-            if is_v_0_8 and not model_name.endswith("inpainting"):
+            if not model_name.endswith("inpainting"):
                 pipe = OnnxStableDiffusionInpaintPipelineLegacy.from_pretrained(
                     model_path, provider=provider, scheduler=scheduler)
             else:
                 # on >=0.7.0 & <0.8.0 or model finetuned for inpainting
                 pipe = OnnxStableDiffusionInpaintPipeline.from_pretrained(
                     model_path, provider=provider, scheduler=scheduler)
-            pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images))
             gc.collect()
         current_pipe = "inpaint"
 
@@ -334,11 +322,8 @@ if __name__ == "__main__":
 
     # create gradio block
     title = "Stable Diffusion " + str(version.parse(_df_version))
-    possibilities = ['TEXT2IMG']
-    if is_v_0_6:
-        possibilities.append('IMG2IMG')
-    if is_v_0_7:
-        possibilities.append('Inpainting')
+    possibilities = ['TEXT2IMG', 'IMG2IMG', 'Inpainting']
+    
     with gr.Blocks(title=title) as app:
         with gr.Row():
             with gr.Column(scale=1, min_width=600):
@@ -355,7 +340,7 @@ if __name__ == "__main__":
                     mask = gr.Image(label="Input mask", type="pil", visible=False)
                     drawn_mask = gr.Image(label="Input image and mask", source="upload", tool="sketch", type="pil", visible=False)
                     prompt = gr.Textbox(value="", lines=2, label="Prompt")
-                    neg_prompt = gr.Textbox(value="", lines=2, label="Negative prompt", visible=is_v_0_4)
+                    neg_prompt = gr.Textbox(value="", lines=2, label="Negative prompt")
                     steps = gr.Slider(1, 150, value=25, step=1, label="Steps")
                     guid = gr.Slider(0, 20, value=11, step=0.5, label="Guidance")
                 with gr.Column():
