@@ -5,7 +5,7 @@
 * [Run](#run)
 * [Updating](#updating)
 
-Dead simple gui with support for latest [Diffusers (v0.10.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2](https://huggingface.co/stabilityai/stable-diffusion-2) or any other model, even inpainting finetuned ones.
+Dead simple gui with support for latest [Diffusers (v0.10.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2.1](https://huggingface.co/stabilityai/stable-diffusion-2-1) or any other model, even inpainting finetuned ones.
 
 Supported schedulers: DDIM, LMS, PNDM, Euler.
 
@@ -48,7 +48,7 @@ mkdir model
 ### Stable Diffusion
 
 ```ps1
-python convert_stable_diffusion_checkpoint_to_onnx.py --model_path="stabilityai/stable-diffusion-2" --output_path="model/stable_diffusion_onnx"
+python convert_stable_diffusion_checkpoint_to_onnx.py --model_path="stabilityai/stable-diffusion-2-1" --output_path="model/stable_diffusion_onnx"
 ```
 
 ### Stable Diffusion Inpainting
@@ -95,7 +95,7 @@ Notice that inpainting provide way better results with a proper model like [stab
 
 ## Updating
 
-Remove `venv` folder and restart the [First installation](#first-installation) process.
+Remove `venv` folder and `*.py` files and restart the [First installation](#first-installation) process.
 
 ## Credits
 
