@@ -5,7 +5,7 @@
 * [Run](#run)
 * [Updating](#updating)
 
-Dead simple gui with support for latest [Diffusers (v0.11.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2.1](https://huggingface.co/stabilityai/stable-diffusion-2-1) or any other model, even inpainting finetuned ones.
+Dead simple gui with support for latest [Diffusers (v0.12.0)](https://github.com/huggingface/diffusers/) on Windows with AMD graphic cards (or CPU, thanks to ONNX and DirectML) with [Stable Diffusion 2.1](https://huggingface.co/stabilityai/stable-diffusion-2-1) or any other model, even inpainting finetuned ones.
 
 Supported schedulers: DDIM, LMS, PNDM, Euler.
 
@@ -34,7 +34,7 @@ pip install wheel wget
 pip install git+https://github.com/huggingface/diffusers.git
 pip install transformers onnxruntime onnx gradio torch ftfy spacy scipy OmegaConf accelerate
 pip install onnxruntime-directml --force-reinstall
-pip install protobuf==3.20.1
+pip install protobuf==3.20.2
 python -m wget https://raw.githubusercontent.com/JbPasquier/stable-diffusion-onnx-ui/main/app.py
 python -m wget https://raw.githubusercontent.com/huggingface/diffusers/main/scripts/convert_original_stable_diffusion_to_diffusers.py -o convert_original_stable_diffusion_to_diffusers.py
 python -m wget https://raw.githubusercontent.com/huggingface/diffusers/main/scripts/convert_stable_diffusion_checkpoint_to_onnx.py -o convert_stable_diffusion_checkpoint_to_onnx.py
