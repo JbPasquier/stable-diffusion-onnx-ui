@@ -21,7 +21,7 @@ Prerequisites
 
 * [Python 3.10](https://www.python.org/downloads/)
 * [Git for windows](https://git-scm.com/download/win)
-* An [huggingface.co](huggingface.co) account
+* An [huggingface.co](https://huggingface.co) account
 * For a better experience, the [latest version of Powershell](https://github.com/PowerShell/PowerShell/releases)
 
 From an empty folder:
