@@ -21,7 +21,7 @@ import PIL
 def get_latents_from_seed(seed: int, batch_size: int, height: int, width: int) -> np.ndarray:
     latents_shape = (batch_size, 4, height // 8, width // 8)
     rng = np.random.default_rng(seed)
-    image_latents = rng.standard_normal(latents_shape).astype(np.float64)
+    image_latents = rng.standard_normal(latents_shape).astype(np.float32)
     return image_latents
 
 
